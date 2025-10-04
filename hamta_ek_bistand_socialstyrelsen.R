@@ -4,6 +4,7 @@ hamta_ek_bistand_socialstyrelsen <- function() {
   if (!require("pacman")) install.packages("pacman")
   p_load(tidyverse,
          glue,
+         httr,
          readxl)
   
   # skapa temporär mapp
@@ -15,7 +16,7 @@ hamta_ek_bistand_socialstyrelsen <- function() {
   py_temp <- tempfile(fileext = ".py")
   py_resp <- GET(py_url)
   stop_for_status(py_resp)
-  writeBin(content(py_resp, "raw"), py_temp)
+  writeBin(httr::content(py_resp, "raw"), py_temp)
   
   system2("python", c(py_temp, tmpdir))
   sokvag_filnamn <- list.files(tmpdir, full.names = TRUE)
