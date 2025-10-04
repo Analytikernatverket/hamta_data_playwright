@@ -51,10 +51,10 @@ hamta_nationella_emissionsdatabasen <- function()
       Förklaring = forklaring
     )
   
-  data_list <- list(data_long)
-  names(data_list) <- basename(xlsx_file) %>% str_remove("\\.xlsx$") %>% paste0("_excel")
+  # data_list <- list(data_long)
+  # names(data_list) <- basename(xlsx_file) %>% str_remove("\\.xlsx$") %>% paste0("_excel")
   
   unlink(tmpdir, recursive = TRUE, force = TRUE)
   
-  return(data_list)
+  return(data_long)
 }
