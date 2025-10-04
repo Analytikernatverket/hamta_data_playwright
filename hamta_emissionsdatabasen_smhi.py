@@ -23,4 +23,4 @@ async def run(download_dir):
 
 if __name__ == "__main__":
   download_dir = sys.argv[1]
-asyncio.run(run(download_dir))
+  asyncio.run(run(download_dir))
