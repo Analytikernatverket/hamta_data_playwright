@@ -17,6 +17,7 @@ hamta_pipos_serviceanalys <- function(
   if (!require("pacman")) install.packages("pacman")
   p_load(tidyverse,
          keyring,
+         httr,
          glue,
          readxl)
   if (returnera_sf) p_load(sf)             # ladda sf-paketet om datasetet ska returneras som sf-objekt
@@ -32,13 +33,18 @@ hamta_pipos_serviceanalys <- function(
     stop("❌ Ingen service med namnet 'pipos' hittades i keyring, det krävs för att köra denna funktion. Lägg in en service som heter 'pipos' med användare och lösenord till Pipos serviceanalys och prova att köra funktionen igen.")
   }
 
-  # skapa temporär mapp där datasetet kommer att sparas
+  # skapa temporär mapp lokalt där datasetet kommer att sparas tillfälligt
   tmpdir <- tempfile()
   dir.create(tmpdir)
   
-  pythonskript_sokvag <- "G:/skript/peter/hamta_pipos_serviceanalys.py"
+  # hämta Python-skript från Github och spara i en tillfällig mapp för att kunna anropa från system2()
+  py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/refs/heads/main/hamta_pipos_serviceanalys.py"
+  py_temp <- tempfile(fileext = ".py")
+  py_resp <- GET(py_url)
+  stop_for_status(py_resp)
+  writeBin(content(py_resp, "raw"), py_temp)
   
-  system2("python", c(pythonskript_sokvag, tmpdir))
+  system2("python", c(py_temp, tmpdir))
   sokvag_filnamn <- list.files(tmpdir, full.names = TRUE)
   
   # läs in datasetet från Excelfilen som sparats ned från Pipos serviceanalys
