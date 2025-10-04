@@ -12,7 +12,7 @@ hamta_ek_bistand_socialstyrelsen <- function() {
   dir.create(tmpdir)
   
   # hämta Python-skript från Github och spara i en tillfällig mapp för att kunna anropa från system2()
-  py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/refs/heads/main/hamta_ek_bistand_socialstyrelsen.py"
+  py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/main/hamta_ek_bistand_socialstyrelsen.py"
   py_temp <- tempfile(fileext = ".py")
   py_resp <- GET(py_url)
   stop_for_status(py_resp)
