@@ -1,3 +1,4 @@
+
 hamta_bra_kommunindikatorer <- function(
   region_vekt = "20"              # det går att skicka in både läns- och kommunkoder, vid länskoder så hämtas alla kommuner i länet  
   ){
@@ -36,13 +37,84 @@ hamta_bra_kommunindikatorer <- function(
   xlsx_fillista <- list.files(py_mapp, full.names = TRUE, pattern = "\\.xlsx$")
   filnamn <- basename(xlsx_fillista) 
   
-  bra_xlsx_list <- xlsx_fillista[1:3] %>% 
-    set_names(basename(xlsx_fillista[1:3]) %>% str_remove(".xlsx")) %>% 
+  bra_xlsx_list <- xlsx_fillista %>% 
+    set_names(basename(xlsx_fillista) %>% str_remove(".xlsx")) %>% 
     map(function(fil) {
     flikar <- excel_sheets(fil)
     suppressMessages(
       map(set_names(flikar), ~ readxl::read_xlsx(fil, sheet = .x, col_names = FALSE)))
   }, .progress = TRUE) 
  
-       
+  las_in_data_fran_flik <- function(fil, fliknamn){
+    
+    # läs in om det är en anmälda brott-flik ===============================================================================
+    if (str_detect(fliknamn, "(anmälda)")){
+      
+      # läs in data
+      anmalda_data <- fil[[fliknamn]]
+      innehall <- anmalda_data[[1,1]]
+      
+      anmalda_data[[2,1]] <- "geografi"
+      kolumn_namn <- slice(anmalda_data, 2) %>% as.character()
+      anmalda_data <- anmalda_data %>% slice(3:nrow(anmalda_data))
+      names(anmalda_data) <- kolumn_namn
+      
+      anmalda_data_long <- anmalda_data %>%
+        pivot_longer(
+          cols = -geografi,
+          names_to = c("enhet", "ar"),
+          names_pattern = "^(.*) (\\d{4})$",
+          values_to = "varde"
+        ) %>% 
+        mutate(kalla = "Anmälda brott",
+               varde = varde %>% as.numeric(),
+               variabel = innehall %>% 
+                 str_remove(" i kommunen, länet.*") %>%
+                 str_remove(fixed("(anmälda brott)")) %>% 
+                 str_trim()
+               ) %>% 
+        relocate(variabel, .after = ar)
+      
+      return(anmalda_data_long)
+    } # slut if-sats för om det är en anmälda brott-flik
+    
+    # läs in om det är en NTU-flik, eller otrygghets-flikar ===============================================================================
+    #if (str_detect(fliknamn, "(NTU)")) {
+    if (!str_detect(fliknamn, "(anmälda)")) {
+      
+      ntu_data <- fil[[fliknamn]]
+      innehall <- ntu_data[[1,1]]
+      
+      ntu_data[[2,1]] <- "geografi"
+      kolumn_namn <- slice(ntu_data, 2) %>% as.character()
+      ntu_data <- ntu_data %>% slice(3:nrow(ntu_data))
+      names(ntu_data) <- kolumn_namn
+      
+      ntu_data_long <- ntu_data %>%
+        pivot_longer(
+          cols = -geografi,
+          names_to = "ar",
+          values_to = "varde"
+        ) %>% 
+        mutate(ar = str_extract(ar, "\\d{4}$"),
+               kalla = "Nationella trygghetsundersökningen (NTU)",
+               varde = varde %>% as.numeric(),
+               variabel = str_remove(innehall, ", enligt NTU.*") %>% 
+                 str_remove(" [0-9]{4}[-–][0-9]{4}"),
+               enhet = str_extract(innehall, "(?<=NTU [0-9]{4}[-–][0-9]{4}\\. ).*$")) %>% 
+        relocate(variabel, .after = ar)
+      
+      return(ntu_data_long)
+    } # slut if-sats för om det är en NTU-flik
+    
+  } # slut funktion för att hämta data i en flik
+  
+  dataset_bra <- map(bra_xlsx_list, function(fil) {
+    map(names(fil), ~ las_in_data_fran_flik(fil = fil, fliknamn = .x)) %>% 
+      list_rbind()      # bind ihop alla flikar till en dataframe
+  }) %>% 
+    list_rbind() %>%    # bind ihop alla excelfiler till en dataframe
+    distinct()
+  
+  return(dataset_bra)
 }
