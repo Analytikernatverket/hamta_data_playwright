@@ -1,6 +1,6 @@
 
 hamta_pipos_serviceanalys <- function(
-  returnera_sf = TRUE  
+  returnera_sf = TRUE
   ) {
   # ==============================================================================================================================
   #
@@ -12,7 +12,7 @@ hamta_pipos_serviceanalys <- function(
   # för att logga in på Pipos. Läs mer här: https://pipos.se/
   #
   # ==============================================================================================================================
-  
+
   # Ladda nödvändiga paket
   if (!require("pacman")) install.packages("pacman")
   p_load(tidyverse,
@@ -21,11 +21,11 @@ hamta_pipos_serviceanalys <- function(
          glue,
          readxl)
   if (returnera_sf) p_load(sf)             # ladda sf-paketet om datasetet ska returneras som sf-objekt
-  
+
   # Kontrollera att Python är installerat
   py_path <- Sys.which("python")
   if (py_path == "") stop("❌ Detta skript kräver att Python är installerat. Ingen Python-installation hittades i PATH, åtgärda och kör skriptet igen.")
-  
+
   # Kolla att paketet keyring finns installerat och att service "pipos" finns
   if (!requireNamespace("keyring", quietly = TRUE)) {
     stop("❌ R-paketet 'keyring' är inte installerat, det krävs för att köra denna funktion. Installera keyring och lägg in en service som heter 'pipos' med användare och lösenord till Pipos serviceanalys och prova att köra funktionen igen.",)
@@ -36,27 +36,29 @@ hamta_pipos_serviceanalys <- function(
   # skapa temporär mapp lokalt där datasetet kommer att sparas tillfälligt
   tmpdir <- tempfile()
   dir.create(tmpdir)
-  
+
   # hämta Python-skript från Github och spara i en tillfällig mapp för att kunna anropa från system2()
   py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/refs/heads/main/hamta_pipos_serviceanalys.py"
   py_temp <- tempfile(fileext = ".py")
   py_resp <- GET(py_url)
   stop_for_status(py_resp)
   writeBin(httr::content(py_resp, "raw"), py_temp)
-  
-  system2("python", c(py_temp, tmpdir))
+
+  r_sokvag_rscript_exe <- file.path(R.home("bin"), "Rscript.exe")
+
+  system2("python", c(py_temp, tmpdir, r_sokvag_rscript_exe))
   sokvag_filnamn <- list.files(tmpdir, full.names = TRUE)
-  
+
   # läs in datasetet från Excelfilen som sparats ned från Pipos serviceanalys
-  pipos_sf <- suppressMessages(read_xlsx(sokvag_filnamn)) %>% 
+  pipos_sf <- suppressMessages(read_xlsx(sokvag_filnamn)) %>%
     filter(!if_all(everything(), is.na))
-  
+
   # gör om datasetet till sf-objekt om returnera_sf = TRUE
   if (returnera_sf) {
-    pipos_sf <- pipos_sf %>% 
+    pipos_sf <- pipos_sf %>%
       st_as_sf(coords = c("X", "Y"), crs = 3006)
   }
-  
+
   unlink(tmpdir, recursive = TRUE, force = TRUE)         # radera den temporära filen när vi är klara
   return(pipos_sf)
 }

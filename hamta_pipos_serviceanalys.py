@@ -3,6 +3,12 @@ import os
 import asyncio
 import subprocess
 
+# sökväg + rscript.exe som skickas med från R som argument två
+if len(sys.argv) > 2:
+    r_sokvag_rscript_exe = sys.argv[2]
+else:
+    r_sokvag_rscript_exe = "Rscript"  # fallback om inget skickas in
+
 # --- skapa funktion för att hämta användarnamn och lösenord från keyring-paketet i r
 def get_r_keyring_credentials(service, username=None):
     """
@@ -25,7 +31,7 @@ def get_r_keyring_credentials(service, username=None):
         cat(key_get(service="{service}", username="{username}"))
         '''
         result = subprocess.run(
-            ["Rscript", "-e", r_cmd],
+            [r_sokvag_rscript_exe, "-e", r_cmd],
             capture_output=True, text=True, check=True
         )
         password = result.stdout.strip()
