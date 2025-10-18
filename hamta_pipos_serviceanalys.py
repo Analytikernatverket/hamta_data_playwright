@@ -46,7 +46,7 @@ def get_r_keyring_credentials(service, username=None):
         cat(paste(user, pw, sep=";"))
         '''
         result = subprocess.run(
-            ["Rscript", "-e", r_cmd],
+            [r_sokvag_rscript_exe, "-e", r_cmd],
             capture_output=True, text=True, check=True
         )
         user, password = result.stdout.strip().split(";", 1)

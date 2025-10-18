@@ -40,7 +40,7 @@ hamta_pipos_serviceanalys <- function(
   # hämta Python-skript från Github och spara i en tillfällig mapp för att kunna anropa från system2()
   py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/refs/heads/main/hamta_pipos_serviceanalys.py"
   py_temp <- tempfile(fileext = ".py")
-  py_resp <- GET(py_url)
+  py_resp <- GET(py_url, add_headers(`Cache-Control` = "no-cache"))
   stop_for_status(py_resp)
   writeBin(httr::content(py_resp, "raw"), py_temp)
 
