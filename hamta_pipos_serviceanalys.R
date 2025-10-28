@@ -55,8 +55,16 @@ hamta_pipos_serviceanalys <- function(
 
   # gör om datasetet till sf-objekt om returnera_sf = TRUE
   if (returnera_sf) {
+    # ta ut rader som saknar geografi och lägg i egen dataframe
+    dataset_utan_geo <- pipos_sf %>%
+      filter(is.na(X)) %>%
+      select(-c(X, Y))
+
+    # ta bort de som saknar geografi, gör om till sf, och lägg till rader som saknar geografi därefter
     pipos_sf <- pipos_sf %>%
-      st_as_sf(coords = c("X", "Y"), crs = 3006)
+      filter(!is.na(X)) %>%
+      st_as_sf(coords = c("X", "Y"), crs = 3006) %>%
+      bind_rows(dataset_utan_geo)
   }
 
   unlink(tmpdir, recursive = TRUE, force = TRUE)         # radera den temporära filen när vi är klara
