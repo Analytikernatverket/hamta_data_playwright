@@ -22,14 +22,12 @@ hamta_bra_kommunindikatorer <- function(
     dplyr::pull(region) %>% 
     c(., region_vekt_kommuner)
 
-  py_temp <- "G:/skript/peter/bra_kommunindikatorer_playwright.py"
-  
   # hämta Python-skript från Github och spara i en tillfällig mapp för att kunna anropa från system2()
-  #py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/main/hamta_emissionsdatabasen_smhi.py"
-  # py_temp <- tempfile(fileext = ".py")
-  # py_resp <- GET(py_url)
-  # stop_for_status(py_resp)
-  # writeBin(httr::content(py_resp, "raw"), py_temp)
+  py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/main/bra_kommunindikatorer.py"
+  py_temp <- tempfile(fileext = ".py")
+  py_resp <- GET(py_url)
+  stop_for_status(py_resp)
+  writeBin(httr::content(py_resp, "raw"), py_temp)
   
   # kör python-scriptet
   system2("python", c(py_temp, py_mapp, valda_kommuner))
