@@ -20,24 +20,32 @@ hamta_ek_bistand_sek_socialstyrelsen <- function() {
 
   system2("python", c(py_temp, tmpdir))
   sokvag_filnamn <- list.files(tmpdir, full.names = TRUE)
-  inlasfil <- suppressMessages(read_xlsx(sokvag_filnamn, col_names = FALSE))
+  #inlasfil <- suppressMessages(read_xlsx(sokvag_filnamn, col_names = FALSE))
+  retur_df <- map(sokvag_filnamn, ~ {
+    suppressMessages(inlasfil <- read_xlsx(.x, col_names = FALSE))
 
-  enhet_kol <- inlasfil[[1,1]]
-  kol_namn <- inlasfil[2,] %>% as.character()
+    enhet_kol <- inlasfil[[1,1]]
+    bakgrund_varde <- str_extract(enhet_kol, "[^,]*$") %>% str_trim()
+    enhet_kol <- str_remove(enhet_kol, ",[^,]*$")
 
-  inlasfil <- inlasfil %>%
-    slice(3:nrow(.)) %>%
-    setNames(kol_namn)
+    kol_namn <- inlasfil[2,] %>% as.character()
 
-  dataset_slutrad <- which(is.na(inlasfil[["År"]]))[1] - 1
+    inlasfil <- inlasfil %>%
+      slice(3:nrow(.)) %>%
+      setNames(kol_namn)
 
-  suppress_specific_warning(
-  inlasfil <- inlasfil %>%
-    slice(1:dataset_slutrad) %>%
-    pivot_longer(cols = c("Januari":"December"), names_to = "Månad", values_to = enhet_kol) %>%
-    mutate({{ enhet_kol }} := na_if(str_replace_all(.data[[enhet_kol]], "--", NA_character_), NA_character_),
-           {{ enhet_kol }} := .data[[enhet_kol]] %>% as.numeric())
-  )
+    dataset_slutrad <- which(is.na(inlasfil[["År"]]))[1] - 1
+
+    suppress_specific_warning(
+    inlasfil <- inlasfil %>%
+      slice(1:dataset_slutrad) %>%
+      pivot_longer(cols = c("Januari":"December"), names_to = "Månad", values_to = enhet_kol) %>%
+      mutate({{ enhet_kol }} := na_if(str_replace_all(.data[[enhet_kol]], "--", NA_character_), NA_character_),
+             {{ enhet_kol }} := .data[[enhet_kol]] %>% as.numeric(),
+             Bakgrund = bakgrund_varde) %>%
+      relocate(Bakgrund, .after = Region)
+    )
+  }) %>% list_rbind()
 
   regionnyckel <- hamtaregtab() %>%
     rename(Regionkod = regionkod)
@@ -47,12 +55,12 @@ hamta_ek_bistand_sek_socialstyrelsen <- function() {
     Månad_num = c(1:12)
   )
 
-  inlasfil <- inlasfil %>%
+  retur_df <- retur_df %>%
     left_join(regionnyckel, by = c("Region" = "region")) %>%
     relocate(Regionkod, .before = "Region") %>%
     left_join(manadsnyckel, by = "Månad") %>%
     relocate(Månad_num, .after = "Månad")
 
   unlink(tmpdir, recursive = TRUE, force = TRUE)
-  return(inlasfil)
+  return(retur_df)
 }
