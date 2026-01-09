@@ -36,8 +36,11 @@ hamta_ek_bistand_individer_socialstyrelsen <- function() {
     slice(1:dataset_slutrad) %>%
     pivot_longer(cols = c("Januari":"December"), names_to = "Månad", values_to = enhet_kol) %>%
     mutate({{ enhet_kol }} := na_if(str_replace_all(.data[[enhet_kol]], "--", NA_character_), NA_character_),
-           {{ enhet_kol }} := .data[[enhet_kol]] %>% as.numeric())
+           {{ enhet_kol }} := .data[[enhet_kol]] %>% as.numeric()) %>%
+    relocate({{ enhet_kol }}, .after = last_col())
   )
+
+  sista_kol <- names(inlasfil)[ncol(inlasfil)]
 
   regionnyckel <- hamtaregtab() %>%
     rename(Regionkod = regionkod)
@@ -52,6 +55,12 @@ hamta_ek_bistand_individer_socialstyrelsen <- function() {
     relocate(Regionkod, .before = "Region") %>%
     left_join(manadsnyckel, by = "Månad") %>%
     relocate(Månad_num, .after = "Månad")
+
+  # filtrera bort år-månader där samtliga värden är NA (kommande månader)
+  inlasfil <- inlasfil %>%
+    group_by(År, Månad) %>%
+    filter(!all(across(all_of(sista_kol), is.na))) %>%
+    ungroup()
 
   unlink(tmpdir, recursive = TRUE, force = TRUE)
   return(inlasfil)
