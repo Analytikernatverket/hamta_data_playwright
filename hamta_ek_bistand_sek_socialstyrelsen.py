@@ -90,8 +90,8 @@ async def main():
         await browser.close()
 
         # Rapportera resultat
-        for f in sparade:
-          print(f"✅ Fil sparad: {f}")
+        # for f in sparade:
+        #   print(f"✅ Fil sparad: {f}")
 
 if __name__ == "__main__":
   import asyncio
