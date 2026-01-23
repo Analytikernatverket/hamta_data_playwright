@@ -50,7 +50,8 @@ hamta_gastnatter_per_hemland_lan_tillvaxtverket <- function() {
 
   retur_df <- retur_df %>%
     left_join(regionnyckel, by = c("Region" = "region")) %>%
-    relocate(Regionkod, .before = "Region")
+    relocate(c(Regionkod, Region), .after = "År") %>%
+    relocate(Beskrivning, .after = Land)
 
   unlink(tmpdir, recursive = TRUE, force = TRUE)
   return(retur_df)
