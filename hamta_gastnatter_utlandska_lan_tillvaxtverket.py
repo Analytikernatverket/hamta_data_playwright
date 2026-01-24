@@ -111,21 +111,7 @@ async def export_once(page, outdir: str):
     
     # 4) Klicka "Markera alla" – prova ARIA-roll först, fall back till text
     await menu.locator("text=Markera alla").first.click()
-    # clicked = False
-    # try:
-    #     await menu.get_by_role("menuitem", name="Markera alla").click()
-    #     clicked = True
-    # except Exception:
-    #     pass
-    # if not clicked:
-    #     try:
-    #         await menu.get_by_role("option", name="Markera alla").click()
-    #         clicked = True
-    #     except Exception:
-    #         pass
-    # if not clicked:
-    #     await menu.locator("text=Markera alla").first.click()
-    
+
     # 5) Stäng Län-rutan om det finns en stäng-knapp
     close_btn = ln_container.locator("[aria-label='close']")
     if await close_btn.count() > 0:
@@ -137,40 +123,6 @@ async def export_once(page, outdir: str):
     except Exception:
         pass
 
-    
-    # # Öppna Län-dropdown och vänta in containern
-    # await fr.locator("[aria-owns='dip_qv_pulldown_Ln']").click()
-    # await fr.wait_for_selector("#dip_qv_pulldown_Ln", state="visible", timeout=6000)
-    # await fr.locator("#dip_qv_pulldown_Ln").scroll_into_view_if_needed()
-    # 
-    # # Öppna meny med markeringsalternativ (scopat till Län-containern)
-    # await fr.locator("#dip_qv_pulldown_Ln [aria-label='selection options']").first.click()
-    # 
-    # # Vänta in overlay/meny och klicka "Markera alla"
-    # await fr.wait_for_selector("[role='menu'], [role='listbox'], .menu, .ui-menu, .dropdown-menu",
-    #                            state="visible", timeout=4000)
-    # 
-    # # Vänta in overlay/meny och klicka "Markera alla"
-    # menu = fr.locator("[role='menu'], [role='listbox'], .menu, .ui-menu, .dropdown-menu").first
-    # await menu.wait_for(state="visible", timeout=4000)
-    # 
-    # # föredra ARIA-roll, fallback till text
-    # try:
-    #     await menu.get_by_role("menuitem", name="Markera alla").click()
-    # except Exception:
-    #     try:
-    #         await menu.get_by_role("option", name="Markera alla").click()
-    #     except Exception:
-    #         await menu.locator("text=Markera alla").first.click()
-    # 
-    # 
-    # 
-    # # Stäng Län-rutan om close-knapp finns
-    # close_btn = fr.locator('#dip_qv_pulldown_Ln [aria-label="close"]')
-    # if await close_btn.count() > 0:
-    #     await close_btn.click()
-
-    
     # 5) Sverige/Utland: öppna "collapsed" kontroll och välj 'Utland' -> stäng
     # Klicka print-spanen bredvid selecten:
     # CSS: #quickview_SverigeUtland + span.dip_collapsed_selector_print
