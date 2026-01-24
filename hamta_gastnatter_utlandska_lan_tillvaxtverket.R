@@ -1,5 +1,5 @@
 
-hamta_gastnatter_per_hemland_lan_tillvaxtverket <- function() {
+hamta_gastnatter_utlandska_lan_tillvaxtverket <- function() {
 
   if (!require("pacman")) install.packages("pacman")
   p_load(tidyverse,
@@ -12,7 +12,7 @@ hamta_gastnatter_per_hemland_lan_tillvaxtverket <- function() {
   dir.create(tmpdir)
 
   # hämta Python-skript från Github och spara i en tillfällig mapp för att kunna anropa från system2()
-  py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/main/hamta_gastnatter_per_hemland_lan_tillvaxtverket.py"
+  py_url <- "https://raw.githubusercontent.com/Analytikernatverket/hamta_data_playwright/main/hamta_gastnatter_utlandska_lan_tillvaxtverket.py"
 
   py_temp <- tempfile(fileext = ".py")
   py_resp <- GET(py_url)
