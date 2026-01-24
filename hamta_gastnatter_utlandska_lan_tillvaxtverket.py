@@ -70,15 +70,7 @@ async def wait_net_settle(page, dom: bool = True, network: bool = True):
 # ---------- Exportlogik ----------
 
 async def export_once(page, outdir: str):
-    """
-    Reproducerar ditt reticulate-flöde:
-      - flik: Utveckling över tid
-      - Län: dots -> Markera alla -> stäng
-      - Sverige/Utland: öppna collapsed select -> välj 'Utland' -> stäng
-      - Topp 10 kommuner: öppna -> 'Alla' -> stäng
-      - Hitta rätt 'Export Excel' med evaluate + regex
-      - Ladda ner och spara fil
-    """
+
     # 1) Till startsidan
     await page.goto(TILLVAXTVERKET_URL, wait_until="domcontentloaded")
     await wait_net_settle(page)
