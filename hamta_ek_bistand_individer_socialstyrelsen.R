@@ -20,47 +20,60 @@ hamta_ek_bistand_individer_socialstyrelsen <- function() {
 
   system2("python", c(py_temp, tmpdir))
   sokvag_filnamn <- list.files(tmpdir, full.names = TRUE)
-  inlasfil <- suppressMessages(read_xlsx(sokvag_filnamn, col_names = FALSE))
 
-  enhet_kol <- inlasfil[[1,1]]
-  kol_namn <- inlasfil[2,] %>% as.character()
+  retur_df <- map(sokvag_filnamn, ~ {
 
-  inlasfil <- inlasfil %>%
-    slice(3:nrow(.)) %>%
-    setNames(kol_namn)
+    inlasfil <- suppressMessages(read_xlsx(.x, col_names = FALSE))
 
-  dataset_slutrad <- which(is.na(inlasfil[["År"]]))[1] - 1
+    beskrivning_txt <- inlasfil[[1,1]]
+    bakgrund_txt <- str_extract(beskrivning_txt, "Inrikes född|Utrikes född")
+    alder_txt <- str_extract(beskrivning_txt, "(?<=Ålder: ).*$") %>% paste0(., " år")
+    enhet_txt <- beskrivning_txt %>%
+      str_remove("^[^,]*,") %>%
+      str_remove(",.*$") %>%
+      str_trim()
+    kol_namn <- inlasfil[2,] %>% as.character()
 
-  suppress_specific_warning(
-  inlasfil <- inlasfil %>%
-    slice(1:dataset_slutrad) %>%
-    pivot_longer(cols = c("Januari":"December"), names_to = "Månad", values_to = enhet_kol) %>%
-    mutate({{ enhet_kol }} := na_if(str_replace_all(.data[[enhet_kol]], "--", NA_character_), NA_character_),
-           {{ enhet_kol }} := .data[[enhet_kol]] %>% as.numeric()) %>%
-    relocate({{ enhet_kol }}, .after = last_col())
-  )
+    inlasfil <- inlasfil %>%
+      slice(3:nrow(.)) %>%
+      setNames(kol_namn)
 
-  sista_kol <- names(inlasfil)[ncol(inlasfil)]
+    dataset_slutrad <- which(is.na(inlasfil[["År"]]))[1] - 1
 
-  regionnyckel <- hamtaregtab() %>%
-    rename(Regionkod = regionkod)
+    suppress_specific_warning(
+    inlasfil <- inlasfil %>%
+      slice(1:dataset_slutrad) %>%
+      pivot_longer(cols = c("Januari":"December"), names_to = "Månad", values_to = "Antal") %>%
+      mutate(Antal = na_if(str_replace_all(Antal, "--", NA_character_), NA_character_),
+             Antal = Antal %>% as.numeric(),
+             Enhet = enhet_txt,
+             Bakgrund = bakgrund_txt,
+             Ålder = alder_txt) %>%
+      relocate(Antal, .after = last_col())
+    )
 
-  manadsnyckel <- tibble(
-    Månad = format(ISOdate(2000, 1:12, 1), "%B") %>% str_to_sentence(),
-    Månad_num = c(1:12)
-  )
+    sista_kol <- names(inlasfil)[ncol(inlasfil)]
 
-  inlasfil <- inlasfil %>%
-    left_join(regionnyckel, by = c("Region" = "region")) %>%
-    relocate(Regionkod, .before = "Region") %>%
-    left_join(manadsnyckel, by = "Månad") %>%
-    relocate(Månad_num, .after = "Månad")
+    regionnyckel <- hamtaregtab() %>%
+      rename(Regionkod = regionkod)
 
-  # filtrera bort år-månader där samtliga värden är NA (kommande månader)
-  inlasfil <- inlasfil %>%
-    group_by(År, Månad) %>%
-    filter(!all(across(all_of(sista_kol), is.na))) %>%
-    ungroup()
+    manadsnyckel <- tibble(
+      Månad = format(ISOdate(2000, 1:12, 1), "%B") %>% str_to_sentence(),
+      Månad_num = c(1:12)
+    )
+
+    inlasfil <- inlasfil %>%
+      left_join(regionnyckel, by = c("Region" = "region")) %>%
+      relocate(Regionkod, .before = "Region") %>%
+      left_join(manadsnyckel, by = "Månad") %>%
+      relocate(Månad_num, .after = "Månad")
+
+    # filtrera bort år-månader där samtliga värden är NA (kommande månader)
+    inlasfil <- inlasfil %>%
+      group_by(År, Månad) %>%
+      filter(!all(across(all_of(sista_kol), is.na))) %>%
+      ungroup()
+  }) %>% list_rbind() # slut map-loop
 
   unlink(tmpdir, recursive = TRUE, force = TRUE)
   return(inlasfil)
