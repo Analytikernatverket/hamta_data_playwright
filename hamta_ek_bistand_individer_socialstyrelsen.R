@@ -76,5 +76,5 @@ hamta_ek_bistand_individer_socialstyrelsen <- function() {
   }) %>% list_rbind() # slut map-loop
 
   unlink(tmpdir, recursive = TRUE, force = TRUE)
-  return(inlasfil)
+  return(retur_df)
 }
