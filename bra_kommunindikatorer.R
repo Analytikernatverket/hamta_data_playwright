@@ -36,11 +36,11 @@ hamta_bra_kommunindikatorer <- function(
   filnamn <- basename(xlsx_fillista)
 
   bra_xlsx_list <- xlsx_fillista %>%
-    set_names(basename(xlsx_fillista) %>% str_remove(".xlsx")) %>%
-    map(function(fil) {
-    flikar <- excel_sheets(fil)
+    purrr::set_names(basename(xlsx_fillista) %>% str_remove(".xlsx")) %>%
+    purrr::map(function(fil) {
+    flikar <- readxl::excel_sheets(fil)
     suppressMessages(
-      map(set_names(flikar), ~ readxl::read_xlsx(fil, sheet = .x, col_names = FALSE)))
+      map(purrr::set_names(flikar), ~ readxl::read_xlsx(fil, sheet = .x, col_names = FALSE)))
   }, .progress = TRUE)
 
   las_in_data_fran_flik <- function(fil, fliknamn){
@@ -107,7 +107,8 @@ hamta_bra_kommunindikatorer <- function(
 
       # Geografiindex per kolumn: 1,1,1, 2,2,2, 3,3,3, ...
       geo_idx <- ceiling(seq_along(ursprung_kolumner) / block_storlek)
-      geo_namn <- geografier[geo_idx]
+      geo_namn <- geografier
+      #geo_namn <- geografier[geo_idx]
 
       nya_cols <- paste0(ursprung_kolumner, "_", geo_namn)
 
@@ -135,9 +136,10 @@ hamta_bra_kommunindikatorer <- function(
         ) %>%
         mutate(kalla = "Nationella trygghetsundersökningen (NTU)",
                varde = varde %>% as.numeric(),
-               variabel = str_remove(innehall, ", enligt NTU.*") %>%
+               variabel = str_remove(innehall, ", enligt NTU[\\s\\S]*") %>%
                  str_remove(" [0-9]{4}[-–][0-9]{4}"),
-               enhet = if_else(str_detect(enhet, "KI "), enhet, str_extract(innehall, "(?<=NTU [0-9]{4}[-–][0-9]{4}\\. ).*$"))) %>%
+               enhet = if_else(str_detect(enhet, "KI "), enhet, str_extract(innehall, "(?<=NTU [0-9]{4}[-–][0-9]{4}\\. )[\\s\\S]*$") %>% str_remove("^[\\r\\n]+") %>% str_trim() %>% str_remove("\\.$"))
+               ) %>%
         relocate(variabel, .after = ar)
 
 
